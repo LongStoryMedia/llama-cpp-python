@@ -695,6 +695,19 @@ class llama_model_kv_override(ctypes.Structure):
 #     bool check_tensors; // validate model tensor data
 #     bool use_extra_bufts; // use extra buffer types (used for weight repacking)
 # };
+class llama_model_tensor_buft_override(ctypes.Structure):
+    """Pattern to buffer-type override for model tensors.
+
+    Mirrors `struct llama_model_tensor_buft_override` in llama.h.
+    A NULL-terminated array of these is provided via llama_model_params.tensor_buft_overrides.
+    """
+
+    _fields_ = [
+        ("pattern", ctypes.c_char_p),
+        ("buft", ctypes.c_void_p),  # ggml_backend_buffer_type_t
+    ]
+
+
 class llama_model_params(ctypes.Structure):
     """Parameters for llama_model
 
@@ -731,8 +744,8 @@ class llama_model_params(ctypes.Structure):
         use_extra_bufts: bool
 
     _fields_ = [
-        ("devices", ctypes.c_void_p), # NOTE: unnused
-        ("tensor_buft_overrides", ctypes.c_void_p), # NOTE: unused
+        ("devices", ctypes.c_void_p), # NOTE: unused
+        ("tensor_buft_overrides", ctypes.POINTER(llama_model_tensor_buft_override)),
         ("n_gpu_layers", ctypes.c_int32),
         ("split_mode", ctypes.c_int),
         ("main_gpu", ctypes.c_int32),
@@ -1405,14 +1418,21 @@ def llama_pooling_type(ctx: llama_context_p, /) -> int:
 
 
 # DEPRECATED(LLAMA_API struct llama_kv_cache * llama_get_kv_self(struct llama_context * ctx), "use llama_get_memory instead");
+_has_llama_get_kv_self = hasattr(_lib, "llama_get_kv_self")
 @ctypes_function(
     "llama_get_kv_self",
     [llama_context_p_ctypes],
     llama_kv_cache_p_ctypes,
+    enabled=_has_llama_get_kv_self,
 )
-def llama_get_kv_self(ctx: llama_context_p, /) -> Optional[llama_kv_cache_p]:
-    """Get the KV cache for self-attention (DEPRECATED)"""
-    ...
+def llama_get_kv_self(ctx: llama_context_p, /) -> Optional[llama_kv_cache_p]:  # type: ignore
+    """Get the KV cache for self-attention (DEPRECATED).
+
+    This symbol was removed upstream in newer versions of llama.cpp.
+    If unavailable, this function will be a no-op returning None and callers
+    should migrate to llama_get_memory / memory view APIs.
+    """
+    return None
 
 
 # LLAMA_API const struct llama_vocab * llama_model_get_vocab(const struct llama_model * model);

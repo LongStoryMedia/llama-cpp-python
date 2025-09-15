@@ -70,6 +70,8 @@ class Llama:
         use_mmap: bool = True,
         use_mlock: bool = False,
         kv_overrides: Optional[Dict[str, Union[bool, int, float, str]]] = None,
+    # Mixture of Experts (MoE) placement
+    n_cpu_moe: int = 0,
         # Context Params
         seed: int = llama_cpp.LLAMA_DEFAULT_SEED,
         n_ctx: int = 512,
@@ -155,6 +157,7 @@ class Llama:
             use_mmap: Use mmap if possible.
             use_mlock: Force the system to keep the model in RAM.
             kv_overrides: Key-value overrides for the model.
+            n_cpu_moe: Keep the Mixture of Experts (MoE) expert weights of the first N layers on CPU (similar to --n-cpu-moe). 0 disables.
             seed: RNG seed, -1 for random
             n_ctx: Text context, 0 = from model
             n_batch: Prompt processing maximum batch size
@@ -298,6 +301,55 @@ class Llama:
                 -1
             ].key = b"\0"  # ensure sentinel element is zeroed
             self.model_params.kv_overrides = self._kv_overrides_array
+
+        # n_cpu_moe support: emulate --n-cpu-moe CLI flag by constructing tensor buffer overrides
+        # to pin expert FFN weights for first N layers on CPU. This relies on the upstream
+        # ggml function ggml_backend_cpu_buffer_type(). If unavailable we warn and skip.
+        if n_cpu_moe < 0:
+            raise ValueError("n_cpu_moe must be >= 0")
+        self.n_cpu_moe = n_cpu_moe
+        if self.n_cpu_moe > 0:
+            try:
+                # Access underlying shared library symbol dynamically (not yet an exposed Python binding)
+                _lib = llama_cpp._lib  # type: ignore[attr-defined]
+                if not hasattr(_lib, "ggml_backend_cpu_buffer_type"):
+                    warnings.warn(
+                        "ggml_backend_cpu_buffer_type symbol not found; cannot apply n_cpu_moe overrides"
+                    )
+                else:
+                    cpu_buf_type_fn = getattr(_lib, "ggml_backend_cpu_buffer_type")
+                    cpu_buf_type_fn.restype = ctypes.c_void_p
+                    cpu_buf_type_fn.argtypes = []  # type: ignore
+                    cpu_buf_type_ptr = cpu_buf_type_fn()
+
+                    # Build NULL-terminated array of overrides (pattern, buft)
+                    OverrideArray = (
+                        llama_cpp.llama_model_tensor_buft_override
+                        * (self.n_cpu_moe + 1)
+                    )
+                    self._tensor_buft_overrides_array = OverrideArray()
+                    for i in range(self.n_cpu_moe):
+                        pattern = f"blk\\.{i}\\.ffn_(up|down|gate)_exps".encode("utf-8")
+                        self._tensor_buft_overrides_array[i].pattern = pattern
+                        self._tensor_buft_overrides_array[i].buft = cpu_buf_type_ptr
+                    # Sentinel terminator
+                    self._tensor_buft_overrides_array[self.n_cpu_moe].pattern = None
+                    self._tensor_buft_overrides_array[self.n_cpu_moe].buft = None  # type: ignore
+
+                    # Assign pointer to first element
+                    self.model_params.tensor_buft_overrides = ctypes.cast(
+                        self._tensor_buft_overrides_array,
+                        ctypes.POINTER(
+                            llama_cpp.llama_model_tensor_buft_override
+                        ),
+                    )
+                    if self.verbose:
+                        print(
+                            f"Applied n_cpu_moe={self.n_cpu_moe} tensor buffer overrides (experts on CPU)",
+                            file=sys.stderr,
+                        )
+            except Exception as e:  # pragma: no cover - safety net
+                warnings.warn(f"Failed to apply n_cpu_moe overrides: {e}")
 
         self.n_batch = min(n_ctx, n_batch)  # ???
         self.n_threads = n_threads or max(multiprocessing.cpu_count() // 2, 1)
