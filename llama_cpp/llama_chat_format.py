@@ -3692,6 +3692,11 @@ class Qwen25VLChatHandler(Llava15ChatHandler):
         return super().__call__(**kwargs)
 
 
+# Register Qwen2.5-VL chat handler
+def create_qwen25vl_chat_handler(clip_model_path: str) -> Qwen25VLChatHandler:
+    """Create a Qwen2.5-VL chat handler with the given clip model path."""
+    return Qwen25VLChatHandler(clip_model_path=clip_model_path)
+
 
 @register_chat_completion_handler("chatml-function-calling")
 def chatml_function_calling(
