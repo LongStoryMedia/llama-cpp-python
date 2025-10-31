@@ -115,8 +115,8 @@ class LlamaChatCompletionHandler(Protocol):
         dry_multiplier: float = 0.0,
         dry_base: float = 1.75,
         dry_allowed_length: int = 2,
-        dry_penalty_last_n:int = 0,
-        dry_seq_breakers: list[str] = ["\n", ":", "\"", "*"],
+        dry_penalty_last_n: int = 0,
+        dry_seq_breakers: list[str] = ["\n", ":", '"', "*"],
         logits_processor: Optional[llama.LogitsProcessorList] = None,
         grammar: Optional[llama.LlamaGrammar] = None,
         logprobs: Optional[bool] = None,
@@ -307,10 +307,14 @@ def _convert_text_completion_logprobs_to_chat(
                     }
                     for top_token, top_logprob in top_logprobs.items()
                 ],
-            } for (token, logprob, top_logprobs) in zip(logprobs["tokens"], logprobs["token_logprobs"], logprobs["top_logprobs"])
+            }
+            for (token, logprob, top_logprobs) in zip(
+                logprobs["tokens"], logprobs["token_logprobs"], logprobs["top_logprobs"]
+            )
         ],
         "refusal": None,
     }
+
 
 def _convert_text_completion_to_chat(
     completion: llama_types.Completion,
@@ -328,7 +332,9 @@ def _convert_text_completion_to_chat(
                     "role": "assistant",
                     "content": completion["choices"][0]["text"],
                 },
-                "logprobs": _convert_text_completion_logprobs_to_chat(completion["choices"][0]["logprobs"]),
+                "logprobs": _convert_text_completion_logprobs_to_chat(
+                    completion["choices"][0]["logprobs"]
+                ),
                 "finish_reason": completion["choices"][0]["finish_reason"],
             }
         ],
@@ -372,7 +378,9 @@ def _convert_text_completion_chunks_to_chat(
                         if chunk["choices"][0]["finish_reason"] is None
                         else {}
                     ),
-                    "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                    "logprobs": _convert_text_completion_logprobs_to_chat(
+                        chunk["choices"][0]["logprobs"]
+                    ),
                     "finish_reason": chunk["choices"][0]["finish_reason"],
                 }
             ],
@@ -435,7 +443,9 @@ def _convert_completion_to_chat_function(
                             }
                         ],
                     },
-                    "logprobs": _convert_text_completion_logprobs_to_chat(completion["choices"][0]["logprobs"]),
+                    "logprobs": _convert_text_completion_logprobs_to_chat(
+                        completion["choices"][0]["logprobs"]
+                    ),
                     "finish_reason": "tool_calls",
                 }
             ],
@@ -488,7 +498,9 @@ def _convert_completion_to_chat_function(
                             {
                                 "index": 0,
                                 "finish_reason": None,
-                                "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                                "logprobs": _convert_text_completion_logprobs_to_chat(
+                                    chunk["choices"][0]["logprobs"]
+                                ),
                                 "delta": {
                                     "role": None,
                                     "content": None,
@@ -525,7 +537,9 @@ def _convert_completion_to_chat_function(
                         {
                             "index": 0,
                             "finish_reason": None,
-                            "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                            "logprobs": _convert_text_completion_logprobs_to_chat(
+                                chunk["choices"][0]["logprobs"]
+                            ),
                             "delta": {
                                 "role": None,
                                 "content": None,
@@ -608,8 +622,8 @@ def chat_formatter_to_chat_completion_handler(
         dry_multiplier: float = 0.0,
         dry_base: float = 1.75,
         dry_allowed_length: int = 2,
-        dry_penalty_last_n:int = 0,
-        dry_seq_breakers: list[str] = ["\n", ":", "\"", "*"],
+        dry_penalty_last_n: int = 0,
+        dry_seq_breakers: list[str] = ["\n", ":", '"', "*"],
         model: Optional[str] = None,
         logits_processor: Optional[llama.LogitsProcessorList] = None,
         grammar: Optional[llama.LlamaGrammar] = None,
@@ -737,7 +751,7 @@ def chat_formatter_to_chat_completion_handler(
 
 
 def hf_autotokenizer_to_chat_formatter(
-    pretrained_model_name_or_path: Union[str, os.PathLike[str]]
+    pretrained_model_name_or_path: Union[str, os.PathLike[str]],
 ) -> ChatFormatter:
     # https://huggingface.co/docs/transformers/main/chat_templating
     # https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1#instruction-format
@@ -762,7 +776,7 @@ def hf_autotokenizer_to_chat_formatter(
 
 
 def hf_autotokenizer_to_chat_completion_handler(
-    pretrained_model_name_or_path: Union[str, os.PathLike[str]]
+    pretrained_model_name_or_path: Union[str, os.PathLike[str]],
 ) -> LlamaChatCompletionHandler:
     chat_formatter = hf_autotokenizer_to_chat_formatter(pretrained_model_name_or_path)
     return chat_formatter_to_chat_completion_handler(chat_formatter)
@@ -1481,8 +1495,8 @@ def functionary_chat_handler(
     dry_multiplier: float = 0.0,
     dry_base: float = 1.75,
     dry_allowed_length: int = 2,
-    dry_penalty_last_n:int = 0,
-    dry_seq_breakers: list[str] = ["\n", ":", "\"", "*"],
+    dry_penalty_last_n: int = 0,
+    dry_seq_breakers: list[str] = ["\n", ":", '"', "*"],
     model: Optional[str] = None,
     logits_processor: Optional[llama.LogitsProcessorList] = None,
     grammar: Optional[llama.LlamaGrammar] = None,
@@ -1823,7 +1837,9 @@ def functionary_chat_handler(
                         }
                     ],
                 },
-                "logprobs": _convert_text_completion_logprobs_to_chat(completion["choices"][0]["logprobs"]),
+                "logprobs": _convert_text_completion_logprobs_to_chat(
+                    completion["choices"][0]["logprobs"]
+                ),
                 "finish_reason": "tool_calls",
             }
         ],
@@ -1861,8 +1877,8 @@ def functionary_v1_v2_chat_handler(
     dry_multiplier: float = 0.0,
     dry_base: float = 1.75,
     dry_allowed_length: int = 2,
-    dry_penalty_last_n:int = 0,
-    dry_seq_breakers: list[str] = ["\n", ":", "\"", "*"],
+    dry_penalty_last_n: int = 0,
+    dry_seq_breakers: list[str] = ["\n", ":", '"', "*"],
     model: Optional[str] = None,
     logits_processor: Optional[llama.LogitsProcessorList] = None,
     grammar: Optional[llama.LlamaGrammar] = None,
@@ -2256,7 +2272,9 @@ def functionary_v1_v2_chat_handler(
                         choices=[
                             {
                                 "index": 0,
-                                "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                                "logprobs": _convert_text_completion_logprobs_to_chat(
+                                    chunk["choices"][0]["logprobs"]
+                                ),
                                 "delta": {
                                     "role": None,
                                     "content": None,
@@ -2358,7 +2376,9 @@ def functionary_v1_v2_chat_handler(
                         choices=[
                             {
                                 "index": 0,
-                                "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                                "logprobs": _convert_text_completion_logprobs_to_chat(
+                                    chunk["choices"][0]["logprobs"]
+                                ),
                                 "delta": {
                                     "role": "assistant",
                                     "content": None,
@@ -2396,7 +2416,9 @@ def functionary_v1_v2_chat_handler(
                                         choices=[
                                             {
                                                 "index": 0,
-                                                "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                                                "logprobs": _convert_text_completion_logprobs_to_chat(
+                                                    chunk["choices"][0]["logprobs"]
+                                                ),
                                                 "delta": {
                                                     "role": "assistant",
                                                     "content": buffer.pop(0),
@@ -2419,7 +2441,9 @@ def functionary_v1_v2_chat_handler(
                                 choices=[
                                     {
                                         "index": 0,
-                                        "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                                        "logprobs": _convert_text_completion_logprobs_to_chat(
+                                            chunk["choices"][0]["logprobs"]
+                                        ),
                                         "delta": {
                                             "role": "assistant",
                                             "content": (
@@ -2505,7 +2529,9 @@ def functionary_v1_v2_chat_handler(
                                 choices=[
                                     {
                                         "index": 0,
-                                        "logprobs": _convert_text_completion_logprobs_to_chat(chunk["choices"][0]["logprobs"]),
+                                        "logprobs": _convert_text_completion_logprobs_to_chat(
+                                            chunk["choices"][0]["logprobs"]
+                                        ),
                                         "delta": {
                                             "role": None,
                                             "content": None,
@@ -2739,7 +2765,9 @@ def functionary_v1_v2_chat_handler(
             choices=[
                 {
                     "index": 0,
-                    "logprobs": _convert_text_completion_logprobs_to_chat(completion["choices"][0]["logprobs"]),
+                    "logprobs": _convert_text_completion_logprobs_to_chat(
+                        completion["choices"][0]["logprobs"]
+                    ),
                     "message": {
                         "role": "assistant",
                         "content": None if content == "" else content,
@@ -2812,20 +2840,20 @@ class Llava15ChatHandler:
         with suppress_stdout_stderr(disable=self.verbose):
             # Get default parameters
             ctx_params = self._mtmd_cpp.mtmd_context_params_default()
-            ctx_params.use_gpu = True # TODO: Make this configurable
+            ctx_params.use_gpu = True  # TODO: Make this configurable
             ctx_params.print_timings = self.verbose
             ctx_params.n_threads = llama_model.n_threads
             ctx_params.verbosity = 2 if self.verbose else 0  # GGML_LOG_LEVEL_INFO = 2
 
             # Initialize mtmd context
             self.mtmd_ctx = self._mtmd_cpp.mtmd_init_from_file(
-                self.clip_model_path.encode(),
-                llama_model.model,
-                ctx_params
+                self.clip_model_path.encode(), llama_model.model, ctx_params
             )
 
             if self.mtmd_ctx is None:
-                raise ValueError(f"Failed to load mtmd context from: {self.clip_model_path}")
+                raise ValueError(
+                    f"Failed to load mtmd context from: {self.clip_model_path}"
+                )
 
             # Check if vision is supported
             if not self._mtmd_cpp.mtmd_support_vision(self.mtmd_ctx):
@@ -2852,7 +2880,7 @@ class Llava15ChatHandler:
             bitmap = self._mtmd_cpp.mtmd_helper_bitmap_init_from_buf(
                 self.mtmd_ctx,
                 (ctypes.c_uint8 * len(image_bytes)).from_buffer(bytearray(image_bytes)),
-                len(image_bytes)
+                len(image_bytes),
             )
 
             if bitmap is None:
@@ -2893,8 +2921,8 @@ class Llava15ChatHandler:
         dry_multiplier: float = 0.0,
         dry_base: float = 1.75,
         dry_allowed_length: int = 2,
-        dry_penalty_last_n:int = 0,
-        dry_seq_breakers: list[str] = ["\n", ":", "\"", "*"],
+        dry_penalty_last_n: int = 0,
+        dry_seq_breakers: list[str] = ["\n", ":", '"', "*"],
         model: Optional[str] = None,
         logits_processor: Optional[llama.LogitsProcessorList] = None,
         grammar: Optional[llama.LlamaGrammar] = None,
@@ -2925,7 +2953,7 @@ class Llava15ChatHandler:
         ).from_string(self.CHAT_FORMAT)
 
         # Get the default media marker
-        media_marker = self._mtmd_cpp.mtmd_default_marker().decode('utf-8')
+        media_marker = self._mtmd_cpp.mtmd_default_marker().decode("utf-8")
 
         # Replace image URLs with media markers in the template
         text = template.render(
@@ -2954,7 +2982,7 @@ class Llava15ChatHandler:
 
             # Create input text structure
             input_text = self._mtmd_cpp.mtmd_input_text()
-            input_text.text = text.encode('utf-8')
+            input_text.text = text.encode("utf-8")
             input_text.add_special = True
             input_text.parse_special = True
 
@@ -2965,13 +2993,15 @@ class Llava15ChatHandler:
 
             try:
                 # Tokenize text and images together
-                bitmap_array = (self._mtmd_cpp.mtmd_bitmap_p_ctypes * len(bitmaps))(*bitmaps)
+                bitmap_array = (self._mtmd_cpp.mtmd_bitmap_p_ctypes * len(bitmaps))(
+                    *bitmaps
+                )
                 result = self._mtmd_cpp.mtmd_tokenize(
                     self.mtmd_ctx,
                     chunks,
                     ctypes.byref(input_text),
                     bitmap_array,
-                    len(bitmaps)
+                    len(bitmaps),
                 )
 
                 if result != 0:
@@ -2992,7 +3022,10 @@ class Llava15ChatHandler:
 
                     chunk_type = self._mtmd_cpp.mtmd_input_chunk_get_type(chunk)
 
-                    if chunk_type == self._mtmd_cpp.mtmd_input_chunk_type.MTMD_INPUT_CHUNK_TYPE_TEXT:
+                    if (
+                        chunk_type
+                        == self._mtmd_cpp.mtmd_input_chunk_type.MTMD_INPUT_CHUNK_TYPE_TEXT
+                    ):
                         # Handle text chunk
                         n_tokens_out = ctypes.c_size_t()
                         tokens_ptr = self._mtmd_cpp.mtmd_input_chunk_get_tokens_text(
@@ -3009,9 +3042,14 @@ class Llava15ChatHandler:
                                 )
                             llama.eval(tokens)
 
-                    elif chunk_type in [self._mtmd_cpp.mtmd_input_chunk_type.MTMD_INPUT_CHUNK_TYPE_IMAGE, self._mtmd_cpp.mtmd_input_chunk_type.MTMD_INPUT_CHUNK_TYPE_AUDIO]:
+                    elif chunk_type in [
+                        self._mtmd_cpp.mtmd_input_chunk_type.MTMD_INPUT_CHUNK_TYPE_IMAGE,
+                        self._mtmd_cpp.mtmd_input_chunk_type.MTMD_INPUT_CHUNK_TYPE_AUDIO,
+                    ]:
                         # Handle image/audio chunk using helper
-                        chunk_n_tokens = self._mtmd_cpp.mtmd_input_chunk_get_n_tokens(chunk)
+                        chunk_n_tokens = self._mtmd_cpp.mtmd_input_chunk_get_n_tokens(
+                            chunk
+                        )
 
                         if llama.n_tokens + chunk_n_tokens > llama.n_ctx():
                             raise ValueError(
@@ -3027,11 +3065,13 @@ class Llava15ChatHandler:
                             llama_cpp.llama_seq_id(0),
                             llama.n_batch,
                             False,  # logits_last
-                            ctypes.byref(new_n_past)
+                            ctypes.byref(new_n_past),
                         )
 
                         if result != 0:
-                            raise ValueError(f"Failed to evaluate chunk: error code {result}")
+                            raise ValueError(
+                                f"Failed to evaluate chunk: error code {result}"
+                            )
 
                         # Update llama's token count
                         llama.n_tokens = new_n_past.value
@@ -3142,10 +3182,12 @@ class Llava15ChatHandler:
         # TODO: Add Pillow support for other image formats beyond (jpg, png)
         if image_url.startswith("data:"):
             import base64
+
             image_bytes = base64.b64decode(image_url.split(",")[1])
             return image_bytes
         else:
             import urllib.request
+
             with urllib.request.urlopen(image_url) as f:
                 image_bytes = f.read()
                 return image_bytes
@@ -3172,6 +3214,7 @@ class Llava15ChatHandler:
     @staticmethod
     def split_text_on_image_urls(text: str, image_urls: List[str]):
         """This method is no longer used in the new implementation."""
+
         def find_first(s: str, substrs: List[str]):
             for i, substr in enumerate(substrs):
                 pos = s.find(substr)
@@ -3556,7 +3599,6 @@ class MiniCPMv26ChatHandler(Llava15ChatHandler):
         "{% endif %}"
         "{% endif %}"
         "{% endfor %}"
-
         "{% for content in message['content'] %}"
         "{% if content.type == 'text' %}"
         "{{ content.text }}"
@@ -3577,7 +3619,7 @@ class MiniCPMv26ChatHandler(Llava15ChatHandler):
 class Gemma3ChatHandler(Llava15ChatHandler):
     DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
 
-    GEMMA3_BOI_TOKEN  = "<start_of_image>"
+    GEMMA3_BOI_TOKEN = "<start_of_image>"
     GEMMA3_EOI_TOKEN = "<end_of_image>"
     GEMMA3_BOS_TOKEN = "<bos>"
     GEMMA3_EOS_TOKEN = "<eos>"
@@ -3594,20 +3636,16 @@ class Gemma3ChatHandler(Llava15ChatHandler):
         "{% set loop_messages = messages %}"
         "{% set first_user_prefix = '' %}"
         "{% endif %}"
-
         "{% for message in loop_messages %}"
         "{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}"
-        "{{ raise_exception(\"Conversation roles must alternate user/assistant/user/assistant/...\") }}"
+        '{{ raise_exception("Conversation roles must alternate user/assistant/user/assistant/...") }}'
         "{% endif %}"
-
         "{% if message['role'] == 'assistant' %}"
         "{% set role = 'model' %}"
         "{% else %}"
         "{% set role = message['role'] %}"
         "{% endif %}"
-
         "{{ '<start_of_turn>' + role + '\n' + (first_user_prefix if loop.first else '') }}"
-
         "{% if message['content'] is string %}"
         "{{ message['content'] | trim }}"
         "{% elif message['content'] is iterable %}"
@@ -3623,10 +3661,8 @@ class Gemma3ChatHandler(Llava15ChatHandler):
         "{% else %}"
         "{{ raise_exception('Invalid content type') }}"
         "{% endif %}"
-
         "<end_of_turn>\n"
         "{% endfor %}"
-
         "{% if add_generation_prompt %}"
         "<start_of_turn>model\n"
         "{% endif %}"
@@ -3638,7 +3674,7 @@ class Qwen25VLChatHandler(Llava15ChatHandler):
 
     CHAT_FORMAT = (
         "{% set image_count = namespace(value=0) %}"
-        #"{% set video_count = namespace(value=0) %}"
+        # "{% set video_count = namespace(value=0) %}"
         "{% for message in messages %}"
         "{% if loop.first and message['role'] != 'system' %}"
         "<|im_start|>system\n"
@@ -3668,34 +3704,31 @@ class Qwen25VLChatHandler(Llava15ChatHandler):
     )
 
     def __call__(self, **kwargs):
-        llama = kwargs['llama']
+        llama = kwargs["llama"]
 
         # Clear state for multiple runs
         llama.reset()
         llama._ctx.memory_clear(True)
         llama.n_tokens = 0
 
-        if hasattr(llama, 'input_ids'):
+        if hasattr(llama, "input_ids"):
             llama.input_ids.fill(0)
 
         # Clear any handler state
-        if hasattr(self, '_last_image_embed'):
+        if hasattr(self, "_last_image_embed"):
             self._last_image_embed = None
             self._last_image_hash = None
 
         if self.verbose:
-            messages = kwargs.get('messages', [])
+            messages = kwargs.get("messages", [])
             image_count = len(self.get_image_urls(messages))
-            print(f"Minimal - Cleared state, processing {image_count} images", file=sys.stderr)
+            print(
+                f"Minimal - Cleared state, processing {image_count} images",
+                file=sys.stderr,
+            )
 
         # Use parent implementation
         return super().__call__(**kwargs)
-
-
-# Register Qwen2.5-VL chat handler
-def create_qwen25vl_chat_handler(clip_model_path: str) -> Qwen25VLChatHandler:
-    """Create a Qwen2.5-VL chat handler with the given clip model path."""
-    return Qwen25VLChatHandler(clip_model_path=clip_model_path)
 
 
 @register_chat_completion_handler("chatml-function-calling")
@@ -3727,8 +3760,8 @@ def chatml_function_calling(
     dry_multiplier: float = 0.0,
     dry_base: float = 1.75,
     dry_allowed_length: int = 2,
-    dry_penalty_last_n:int = 0,
-    dry_seq_breakers: list[str] = ["\n", ":", "\"", "*"],
+    dry_penalty_last_n: int = 0,
+    dry_seq_breakers: list[str] = ["\n", ":", '"', "*"],
     model: Optional[str] = None,
     logits_processor: Optional[llama.LogitsProcessorList] = None,
     grammar: Optional[llama.LlamaGrammar] = None,
@@ -4142,7 +4175,9 @@ def chatml_function_calling(
                 {
                     "finish_reason": "tool_calls",
                     "index": 0,
-                    "logprobs": _convert_text_completion_logprobs_to_chat(completion["choices"][0]["logprobs"]),
+                    "logprobs": _convert_text_completion_logprobs_to_chat(
+                        completion["choices"][0]["logprobs"]
+                    ),
                     "message": {
                         "role": "assistant",
                         "content": None,
