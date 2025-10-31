@@ -291,6 +291,10 @@ def test_multimodal_chat_completion_with_image():
         assert llama.chat_handler is not None
         print("✓ Model initialized with multimodal support")
 
+        res = llama.create_chat_completion(messages)  # type: ignore
+        for choice in res["choices"]:  # type: ignore
+            print(choice["message"])
+
         # For safety, we'll test message formatting rather than full generation
         # to avoid potential segfaults in the CI environment
         print("✓ Multimodal pipeline validation completed")
