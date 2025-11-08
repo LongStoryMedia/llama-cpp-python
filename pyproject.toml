@@ -66,7 +66,9 @@ wheel.packages = ["llama_cpp"]
 cmake.verbose = true
 cmake.minimum-version = "3.21"
 minimum-version = "0.5.1"
-sdist.include = [".git", "vendor/llama.cpp/*"]
+# By default, don't include vendor sources - use external llama.cpp
+# To use internal build, set cmake.args = ["-DLLAMA_BUILD=ON", "-DLLAMA_USE_EXTERNAL=OFF"]
+sdist.exclude = ["vendor/llama.cpp/*"]
 
 [tool.scikit-build.metadata.version]
 provider = "scikit_build_core.metadata.regex"

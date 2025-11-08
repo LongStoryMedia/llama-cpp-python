@@ -2,8 +2,13 @@ cmake_minimum_required(VERSION 3.21)
 
 project(llama_cpp)
 
-option(LLAMA_BUILD "Build llama.cpp shared library and install alongside python package" ON)
-option(MTMD_BUILD "Build mtmd shared library and install alongside python package" ON)
+option(LLAMA_BUILD "Build llama.cpp shared library and install alongside python package" OFF)
+option(LLAMA_USE_EXTERNAL "Use externally built llama.cpp library" ON)
+option(MTMD_BUILD "Build mtmd shared library and install alongside python package" OFF)
+
+# External llama.cpp configuration
+set(LLAMA_CPP_LIB_PATH "" CACHE STRING "Path to external llama.cpp library directory")
+set(LLAMA_CPP_INCLUDE_PATH "" CACHE STRING "Path to external llama.cpp include directory")
 
 function(llama_cpp_python_install_target target)
     if(NOT TARGET ${target})
@@ -45,7 +50,103 @@ function(llama_cpp_python_install_target target)
     endif()
 endfunction()
 
-if (LLAMA_BUILD)
+function(llama_cpp_python_install_external_library lib_path)
+    get_filename_component(lib_name ${lib_path} NAME)
+    
+    install(
+        FILES ${lib_path}
+        DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/llama_cpp/lib
+    )
+    install(
+        FILES ${lib_path}
+        DESTINATION ${SKBUILD_PLATLIB_DIR}/llama_cpp/lib
+    )
+    
+    message(STATUS "Will install external library: ${lib_path}")
+endfunction()
+
+if (LLAMA_USE_EXTERNAL)
+    message(STATUS "Using external llama.cpp library")
+    
+    # Find external llama.cpp library
+    if(LLAMA_CPP_LIB_PATH)
+        set(LLAMA_LIBRARY_SEARCH_PATHS ${LLAMA_CPP_LIB_PATH})
+    else()
+        # Default search paths for common installation locations
+        set(LLAMA_LIBRARY_SEARCH_PATHS
+            /usr/local/lib
+            /usr/lib
+            /opt/homebrew/lib
+            /opt/local/lib
+            ${CMAKE_PREFIX_PATH}/lib
+        )
+    endif()
+
+    # Find the llama library
+    find_library(LLAMA_LIBRARY
+        NAMES llama libllama
+        PATHS ${LLAMA_LIBRARY_SEARCH_PATHS}
+        NO_DEFAULT_PATH
+    )
+
+    if(NOT LLAMA_LIBRARY)
+        find_library(LLAMA_LIBRARY
+            NAMES llama libllama
+        )
+    endif()
+
+    if(NOT LLAMA_LIBRARY)
+        message(FATAL_ERROR "External llama.cpp library not found. Please specify LLAMA_CPP_LIB_PATH or install llama.cpp in a standard location.")
+    endif()
+
+    message(STATUS "Found llama library: ${LLAMA_LIBRARY}")
+
+    # Find GGML library (may be separate or combined with llama)
+    find_library(GGML_LIBRARY
+        NAMES ggml libggml
+        PATHS ${LLAMA_LIBRARY_SEARCH_PATHS}
+        NO_DEFAULT_PATH
+    )
+
+    if(NOT GGML_LIBRARY)
+        find_library(GGML_LIBRARY
+            NAMES ggml libggml
+        )
+    endif()
+
+    if(GGML_LIBRARY)
+        message(STATUS "Found ggml library: ${GGML_LIBRARY}")
+        llama_cpp_python_install_external_library(${GGML_LIBRARY})
+    else()
+        message(STATUS "GGML library not found separately, assuming it's included in llama library")
+    endif()
+
+    # Install the external libraries
+    llama_cpp_python_install_external_library(${LLAMA_LIBRARY})
+
+    # Find and install backend libraries if they exist separately
+    set(BACKEND_LIBRARIES
+        ggml-base ggml-amx ggml-blas ggml-cann ggml-cpu ggml-cuda 
+        ggml-hip ggml-kompute ggml-metal ggml-musa ggml-opencl 
+        ggml-rpc ggml-sycl ggml-vulkan ggml-webgpu
+    )
+
+    foreach(backend ${BACKEND_LIBRARIES})
+        find_library(${backend}_LIBRARY
+            NAMES ${backend} lib${backend}
+            PATHS ${LLAMA_LIBRARY_SEARCH_PATHS}
+            NO_DEFAULT_PATH
+        )
+        
+        if(${backend}_LIBRARY)
+            message(STATUS "Found ${backend} library: ${${backend}_LIBRARY}")
+            llama_cpp_python_install_external_library(${${backend}_LIBRARY})
+        endif()
+    endforeach()
+
+elseif (LLAMA_BUILD)
+    message(STATUS "Building llama.cpp from vendored source")
+    
     set(BUILD_SHARED_LIBS "On")
 
     set(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -167,4 +268,6 @@ if (LLAMA_BUILD)
             install(FILES $<TARGET_RUNTIME_DLLS:mtmd> DESTINATION ${SKBUILD_PLATLIB_DIR}/llama_cpp/lib)
         endif()
     endif()
+else()
+    message(FATAL_ERROR "Either LLAMA_USE_EXTERNAL or LLAMA_BUILD must be enabled")
 endif()

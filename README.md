@@ -30,21 +30,54 @@ Documentation is available at [https://llama-cpp-python.readthedocs.io/en/latest
 
 ## Installation
 
-Requirements:
+### Using External llama.cpp (Recommended)
 
-  - Python 3.8+
-  - C compiler
-      - Linux: gcc or clang
-      - Windows: Visual Studio or MinGW
-      - MacOS: Xcode
+By default, llama-cpp-python now expects to use an externally built llama.cpp library. This provides better flexibility and smaller package size.
 
-To install the package, run:
+#### Step 1: Install llama.cpp
+
+First, build and install llama.cpp with shared libraries:
+
+```bash
+git clone https://github.com/ggerganov/llama.cpp.git
+cd llama.cpp
+mkdir build && cd build
+cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+sudo make install  # Optional: install to system location
+```
+
+#### Step 2: Install llama-cpp-python
 
 ```bash
 pip install llama-cpp-python
 ```
 
-This will also build `llama.cpp` from source and install it alongside this python package.
+For custom llama.cpp installation paths:
+
+```bash
+CMAKE_ARGS="-DLLAMA_CPP_LIB_PATH=/path/to/llama.cpp/lib" pip install llama-cpp-python
+```
+
+See [External llama.cpp Guide](docs/external-llama-cpp.md) for detailed instructions.
+
+### Legacy Installation (Internal Build)
+
+Requirements:
+
+- Python 3.8+
+- C compiler
+  - Linux: gcc or clang
+  - Windows: Visual Studio or MinGW
+  - MacOS: Xcode
+
+To use the legacy internal build method:
+
+```bash
+CMAKE_ARGS="-DLLAMA_BUILD=ON -DLLAMA_USE_EXTERNAL=OFF" pip install llama-cpp-python
+```
+
+This will build `llama.cpp` from the vendored source and install it alongside this python package.
 
 If this fails, add `--verbose` to the `pip install` see the full cmake build log.
 
@@ -777,8 +810,7 @@ make build
 make test
 ```
 
-You can also test out specific commits of `llama.cpp` by checking out the desired commit in the `vendor/llama.cpp` submodule and then running `make clean` and `pip install -e .` again. Any changes in the `llama.h` API will require
-changes to the `llama_cpp/llama_cpp.py` file to match the new API (additional changes may be required elsewhere).
+You can also test out specific commits of `llama.cpp` when using the legacy internal build by checking out the desired commit in the `vendor/llama.cpp` submodule and then running `make clean` and `CMAKE_ARGS="-DLLAMA_BUILD=ON -DLLAMA_USE_EXTERNAL=OFF" pip install -e .` again. When using external builds, update your external llama.cpp installation instead. Any changes in the `llama.h` API will require changes to the `llama_cpp/llama_cpp.py` file to match the new API (additional changes may be required elsewhere).
 
 ## FAQ
 
